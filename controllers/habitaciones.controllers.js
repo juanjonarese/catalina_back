@@ -80,7 +80,16 @@ const VerificarDisponibilidad = async (req, res) => {
 // Crear habitación
 const CrearHabitacion = async (req, res) => {
   try {
-    const habitacion = new HabitacionesModel(req.body);
+    // Obtener el último número de habitación
+    const ultimaHabitacion = await HabitacionesModel.findOne().sort({ numero: -1 });
+    const siguienteNumero = ultimaHabitacion ? ultimaHabitacion.numero + 1 : 1;
+
+    // Crear habitación con el número consecutivo
+    const habitacion = new HabitacionesModel({
+      ...req.body,
+      numero: siguienteNumero
+    });
+
     await habitacion.save();
     res.status(201).json({ msg: "Habitación creada exitosamente", habitacion });
   } catch (error) {

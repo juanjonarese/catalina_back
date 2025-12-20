@@ -1,6 +1,11 @@
 const { Schema, model } = require("mongoose");
 
 const HabitacionSchema = new Schema({
+  numero: {
+    type: Number,
+    required: true,
+    unique: true,
+  },
   titulo: {
     type: String,
     required: true,
