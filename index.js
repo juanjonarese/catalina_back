@@ -36,6 +36,14 @@ try {
   console.error("✗ Error al cargar rutas de habitaciones:", error.message);
 }
 
+try {
+  const pasajerosRoutes = require("./routes/pasajeros.routes");
+  app.use("/pasajeros", pasajerosRoutes);
+  console.log("✓ Rutas de pasajeros cargadas");
+} catch (error) {
+  console.error("✗ Error al cargar rutas de pasajeros:", error.message);
+}
+
 // Ruta de prueba
 app.get("/", (req, res) => {
   res.json({ msg: "API Hotel funcionando correctamente" });
@@ -57,6 +65,8 @@ if (process.env.NODE_ENV !== 'production') {
     console.log("  POST /habitaciones");
     console.log("  GET  /reservas");
     console.log("  POST /reservas");
+    console.log("  GET  /pasajeros");
+    console.log("  POST /pasajeros");
   });
 }
 
