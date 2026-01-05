@@ -44,6 +44,14 @@ try {
   console.error("✗ Error al cargar rutas de pasajeros:", error.message);
 }
 
+try {
+  const pagosRoutes = require("./routes/pagos.routes");
+  app.use("/pagos", pagosRoutes);
+  console.log("✓ Rutas de pagos cargadas");
+} catch (error) {
+  console.error("✗ Error al cargar rutas de pagos:", error.message);
+}
+
 // Ruta de prueba
 app.get("/", (req, res) => {
   res.json({ msg: "API Hotel funcionando correctamente" });
@@ -67,6 +75,9 @@ if (process.env.NODE_ENV !== 'production') {
     console.log("  POST /reservas");
     console.log("  GET  /pasajeros");
     console.log("  POST /pasajeros");
+    console.log("  POST /pagos/crear-preferencia");
+    console.log("  POST /pagos/webhook");
+    console.log("  GET  /pagos/reserva/:reservaId");
   });
 }
 

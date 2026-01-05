@@ -1,6 +1,14 @@
 const { Schema, model } = require("mongoose");
 
 const ReservaSchema = new Schema({
+  // Código único de reserva
+  codigoReserva: {
+    type: String,
+    required: true,
+    unique: true,
+    uppercase: true,
+  },
+
   // Información del cliente
   nombreCliente: {
     type: String,
@@ -57,6 +65,13 @@ const ReservaSchema = new Schema({
     type: Number,
     required: true,
     min: 0,
+  },
+
+  // Referencia al pago (opcional, solo si se pagó)
+  pagoId: {
+    type: Schema.Types.ObjectId,
+    ref: "pagos",
+    required: false,
   },
 
   // Fechas de registro y actualización

@@ -4,7 +4,7 @@ const ReservasModel = require("../models/reservas.model");
 // Obtener todas las habitaciones
 const ObtenerHabitaciones = async (req, res) => {
   try {
-    const habitaciones = await HabitacionesModel.find().sort({ fechaCreacion: -1 });
+    const habitaciones = await HabitacionesModel.find().sort({ numero: 1 });
     res.status(200).json({ habitaciones });
   } catch (error) {
     console.error("Error en ObtenerHabitaciones:", error);
@@ -80,14 +80,24 @@ const VerificarDisponibilidad = async (req, res) => {
 // Crear habitación
 const CrearHabitacion = async (req, res) => {
   try {
-    // Obtener el último número de habitación
-    const ultimaHabitacion = await HabitacionesModel.findOne().sort({ numero: -1 });
-    const siguienteNumero = ultimaHabitacion ? ultimaHabitacion.numero + 1 : 1;
+    let numeroHabitacion = req.body.numero;
 
-    // Crear habitación con el número consecutivo
+    // Si no se proporciona número, generar uno automáticamente
+    if (!numeroHabitacion) {
+      const ultimaHabitacion = await HabitacionesModel.findOne().sort({ numero: -1 });
+      numeroHabitacion = ultimaHabitacion ? ultimaHabitacion.numero + 1 : 1;
+    } else {
+      // Verificar que el número no esté en uso
+      const habitacionExistente = await HabitacionesModel.findOne({ numero: numeroHabitacion });
+      if (habitacionExistente) {
+        return res.status(400).json({ msg: `El número de habitación ${numeroHabitacion} ya está en uso` });
+      }
+    }
+
+    // Crear habitación con el número
     const habitacion = new HabitacionesModel({
       ...req.body,
-      numero: siguienteNumero
+      numero: numeroHabitacion
     });
 
     await habitacion.save();
@@ -101,9 +111,12 @@ const CrearHabitacion = async (req, res) => {
 // Actualizar habitación
 const ActualizarHabitacion = async (req, res) => {
   try {
+    // Crear una copia del body sin el campo numero para prevenir cambios
+    const { numero, ...datosActualizacion } = req.body;
+
     const habitacion = await HabitacionesModel.findByIdAndUpdate(
       req.params.id,
-      { ...req.body, fechaActualizacion: Date.now() },
+      { ...datosActualizacion, fechaActualizacion: Date.now() },
       { new: true }
     );
 
