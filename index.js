@@ -52,14 +52,9 @@ try {
   console.error("✗ Error al cargar rutas de pagos:", error.message);
 }
 
-// Ruta de prueba
+// Ruta de health check
 app.get("/", (req, res) => {
   res.json({ msg: "API Hotel funcionando correctamente" });
-});
-
-// Ruta de prueba directa para habitaciones
-app.get("/test-habitaciones", (req, res) => {
-  res.json({ msg: "Ruta de test funcionando" });
 });
 
 // Solo iniciar el servidor si no estamos en Vercel

@@ -1,68 +1,15 @@
 const { transporter } = require("../middleware/nodemailer.middleware");
 
-const registroExitoso = async (emailUsuario, nombreUsuario) => {
-  try {
-    await transporter.sendMail({
-      from: `"FotoShow" <${process.env.GMAIL_APP_USER}>`,
-      to: `${emailUsuario}`,
-      subject: "Registro exitoso ✔",
-      text: "Gracias por registrarte", // plain‑text body
-      html: `<b>Bienvenido ${nombreUsuario}</b>`, // HTML body
-    });
-
-    return {
-      msg: "ok",
-      statusCode: 200,
-    };
-  } catch (error) {
-    console.log(error);
-    return {
-      error,
-      statusCode: 500,
-    };
-  }
-};
-
-const recuperarContrasenia = async (token, emailUsuario) => {
-  try {
-    const info = await transporter.sendMail({
-      from: `"FotoShow" <${process.env.GMAIL_APP_USER}>`,
-      to: `${emailUsuario}`,
-      subject: "Recuperacion contraseña ****",
-      html: `
-        <b>Para recuperar tu contraseña hace click en el link a continuacion:</b>
-        <a href="https://fotoshow-frontend.vercel.app/changepass?token=${token}">Ir a la página </a>
-      `,
-    });
-    console.log(info);
-    return {
-      msg: "ok",
-      statusCode: 200,
-    };
-  } catch (error) {
-    console.log({ error });
-    return {
-      error,
-      statusCode: 500,
-    };
-  }
-};
-
-// ⚡ NUEVA FUNCIÓN GENÉRICA para enviar cualquier email
+// ⚡ Función genérica para enviar cualquier email
 const enviarEmail = async ({ email, nombre, asunto, html, text }) => {
   try {
-    console.log("📧 Enviando email a:", email);
-    console.log("   Asunto:", asunto);
-
     const info = await transporter.sendMail({
-      from: `"FotoShow" <${process.env.GMAIL_APP_USER}>`,
+      from: `"Hotel Reservaciones" <${process.env.GMAIL_APP_USER}>`,
       to: email,
       subject: asunto,
-      text: text || "", // Texto plano (opcional)
-      html: html, // HTML del email
+      text: text || "",
+      html: html,
     });
-
-    console.log("✅ Email enviado exitosamente. Message ID:", info.messageId);
 
     return {
       success: true,
@@ -253,8 +200,6 @@ const confirmarReserva = async (reserva) => {
 };
 
 module.exports = {
-  registroExitoso,
-  recuperarContrasenia,
   enviarEmail,
-  confirmarReserva, // Nueva función para confirmar reservas
+  confirmarReserva,
 };

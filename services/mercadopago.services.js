@@ -4,9 +4,6 @@ const ReservasModel = require("../models/reservas.model");
 const { confirmarReserva } = require("../helpers/mensajes.nodemailer.helper");
 
 // Configurar Mercado Pago
-console.log("🔑 MERCADOPAGO_ACCESS_TOKEN existe:", !!process.env.MERCADOPAGO_ACCESS_TOKEN);
-console.log("🔑 Primeros caracteres:", process.env.MERCADOPAGO_ACCESS_TOKEN?.substring(0, 15));
-
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
   options: {
@@ -44,8 +41,6 @@ const generarCodigoReserva = async () => {
  */
 const CrearPreferenciaService = async (datosReserva) => {
   try {
-    console.log("📦 Iniciando creación de preferencia para reserva");
-
     const {
       nombreCliente,
       emailCliente,
@@ -79,8 +74,6 @@ const CrearPreferenciaService = async (datosReserva) => {
         currency_id: "ARS",
       },
     ];
-
-    console.log("💰 Items para Mercado Pago:", items);
 
     // URLs de retorno
     const baseURL = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -117,8 +110,6 @@ const CrearPreferenciaService = async (datosReserva) => {
       },
     });
 
-    console.log("✅ Preferencia creada:", result.id);
-
     // Guardar registro inicial del pago
     const nuevoPago = new PagosModel({
       mercadoPagoId: result.id,
@@ -153,11 +144,8 @@ const CrearPreferenciaService = async (datosReserva) => {
  */
 const ProcesarWebhookService = async (data) => {
   try {
-    console.log("📨 Webhook recibido:", JSON.stringify(data, null, 2));
-
     // Mercado Pago envía notificaciones de tipo "payment"
     if (data.type !== "payment") {
-      console.log("⚠️ Tipo de notificación ignorado:", data.type);
       return {
         error: false,
         msg: "Notificación ignorada",
@@ -170,12 +158,8 @@ const ProcesarWebhookService = async (data) => {
     const payment = new Payment(client);
     const paymentInfo = await payment.get({ id: paymentId });
 
-    console.log("💰 Estado del pago:", paymentInfo.status);
-    console.log("📋 Preference ID:", paymentInfo.preference_id);
-
     // Solo procesar si el pago fue aprobado
     if (paymentInfo.status !== "approved") {
-      console.log("⏳ Pago no aprobado aún:", paymentInfo.status);
       return {
         error: false,
         msg: "Pago no aprobado",
@@ -189,7 +173,6 @@ const ProcesarWebhookService = async (data) => {
     });
 
     if (pagoExistente && pagoExistente.reservaId) {
-      console.log("⚠️ Reserva ya procesada anteriormente");
       return {
         error: false,
         msg: "Reserva ya procesada",
@@ -254,8 +237,6 @@ const ProcesarWebhookService = async (data) => {
     } catch (emailError) {
       console.error("❌ Error al enviar email de confirmación:", emailError);
     }
-
-    console.log("✅ Reserva creada automáticamente:", codigoReserva);
 
     return {
       error: false,
