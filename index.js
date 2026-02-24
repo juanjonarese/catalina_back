@@ -57,6 +57,19 @@ app.get("/", (req, res) => {
   res.json({ msg: "API Hotel funcionando correctamente" });
 });
 
+// Ruta de diagnóstico temporal
+app.get("/diagnostico", async (req, res) => {
+  const mongoose = require("mongoose");
+  const estado = mongoose.connection.readyState;
+  const estados = { 0: "desconectado", 1: "conectado", 2: "conectando", 3: "desconectando" };
+  res.json({
+    db: estados[estado] || "desconocido",
+    dbReadyState: estado,
+    mongo_connect_set: !!process.env.MONGO_CONNECT,
+    node_env: process.env.NODE_ENV || "no definido",
+  });
+});
+
 // Solo iniciar el servidor si no estamos en Vercel
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 8080;
