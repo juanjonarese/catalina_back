@@ -1,5 +1,5 @@
 require("dotenv").config();
-require("./db/config.database");
+const connectDB = require("./db/config.database");
 
 const express = require("express");
 const app = express();
@@ -17,6 +17,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 app.use(morgan("dev"));
+
+// Middleware de conexión a DB — garantiza que cada request espera la conexión
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    res.status(503).json({ msg: "Error de conexión a la base de datos", error: error.message });
+  }
+});
 
 // Rutas
 console.log("Cargando rutas...");
@@ -58,7 +68,7 @@ app.get("/", (req, res) => {
 });
 
 // Ruta de diagnóstico temporal
-app.get("/diagnostico", async (req, res) => {
+app.get("/diagnostico", (req, res) => {
   const mongoose = require("mongoose");
   const estado = mongoose.connection.readyState;
   const estados = { 0: "desconectado", 1: "conectado", 2: "conectando", 3: "desconectando" };
