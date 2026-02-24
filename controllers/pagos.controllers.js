@@ -32,23 +32,17 @@ const CrearPreferenciaPago = async (req, res) => {
  * Recibir notificaciones de Mercado Pago (webhook)
  */
 const WebhookMercadoPago = async (req, res) => {
-  // Mercado Pago envía los datos en el body y query
   const data = req.body || req.query;
 
-  console.log("🔔 Webhook recibido de Mercado Pago");
-
-  // Responder inmediatamente a Mercado Pago con 200
-  // (para que no reintente enviar la notificación)
-  res.status(200).send("OK");
-
-  // Procesar el webhook de forma asíncrona
-  const { error, msg, reserva } = await ProcesarWebhookService(data);
+  // Procesar primero, responder después
+  // En Vercel serverless la función se corta al enviar la respuesta
+  const { error, msg } = await ProcesarWebhookService(data);
 
   if (error) {
     console.error("❌ Error procesando webhook:", msg);
-  } else {
-    console.log("✅ Webhook procesado exitosamente");
   }
+
+  res.status(200).send("OK");
 };
 
 /**
