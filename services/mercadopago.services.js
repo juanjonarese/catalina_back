@@ -120,6 +120,10 @@ const CrearPreferenciaService = async (datosReserva) => {
     });
     await nuevoPago.save();
 
+    console.log("🔗 init_point:", result.init_point);
+    console.log("🔗 sandbox_init_point:", result.sandbox_init_point);
+    console.log("🔗 URL usada:", result.sandbox_init_point || result.init_point);
+
     return {
       error: false,
       preferencia: {
