@@ -120,13 +120,11 @@ const CrearPreferenciaService = async (datosReserva) => {
     });
     await nuevoPago.save();
 
-    // IMPORTANTE: siempre usar init_point, tanto para TEST como para produccion
-    // sandbox_init_point causa problemas con el flujo 3DS en el sandbox
     return {
       error: false,
       preferencia: {
         id: result.id,
-        init_point: result.init_point,
+        init_point: result.sandbox_init_point || result.init_point,
       },
       statusCode: 200,
     };
