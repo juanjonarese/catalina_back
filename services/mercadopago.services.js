@@ -120,11 +120,15 @@ const CrearPreferenciaService = async (datosReserva) => {
     });
     await nuevoPago.save();
 
+    // Con credenciales TEST usar sandbox_init_point, con APP_USR usar init_point
+    const esTest = process.env.MERCADOPAGO_ACCESS_TOKEN?.startsWith("TEST-");
+    const urlPago = esTest ? result.sandbox_init_point : result.init_point;
+
     return {
       error: false,
       preferencia: {
         id: result.id,
-        init_point: result.init_point, // IMPORTANTE: usar init_point con credenciales APP_USR
+        init_point: urlPago,
       },
       statusCode: 200,
     };
