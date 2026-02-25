@@ -25,6 +25,7 @@ const CrearPreferenciaPago = async (req, res) => {
     msg: "Preferencia creada exitosamente",
     preferenceId: preferencia.id,
     initPoint: preferencia.init_point,
+    sandboxInitPoint: preferencia.sandbox_init_point,
   });
 };
 
