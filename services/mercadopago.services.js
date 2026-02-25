@@ -120,15 +120,13 @@ const CrearPreferenciaService = async (datosReserva) => {
     });
     await nuevoPago.save();
 
-    // Con credenciales TEST usar sandbox_init_point, con APP_USR usar init_point
-    const esTest = process.env.MERCADOPAGO_ACCESS_TOKEN?.startsWith("TEST-");
-    const urlPago = esTest ? result.sandbox_init_point : result.init_point;
-
+    // IMPORTANTE: siempre usar init_point, tanto para TEST como para produccion
+    // sandbox_init_point causa problemas con el flujo 3DS en el sandbox
     return {
       error: false,
       preferencia: {
         id: result.id,
-        init_point: urlPago,
+        init_point: result.init_point,
       },
       statusCode: 200,
     };
