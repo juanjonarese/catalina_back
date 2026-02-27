@@ -8,7 +8,7 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
   options: {
     timeout: 5000,
-  }
+  },
 });
 
 /**
@@ -20,24 +20,23 @@ const generarCodigoReserva = async () => {
 
   const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let codigoAleatorio = "";
+
   for (let i = 0; i < 6; i++) {
     codigoAleatorio += caracteres.charAt(
-      Math.floor(Math.random() * caracteres.length)
+      Math.floor(Math.random() * caracteres.length),
     );
   }
 
   const codigo = `RES-${año}${mes}-${codigoAleatorio}`;
 
   const existente = await ReservasModel.findOne({ codigoReserva: codigo });
-  if (existente) {
-    return generarCodigoReserva();
-  }
+  if (existente) return generarCodigoReserva();
 
   return codigo;
 };
 
 /**
- * Crear preferencia de pago para una reserva de hotel
+ * Crear preferencia de pago
  */
 const CrearPreferenciaService = async (datosReserva) => {
   try {
@@ -55,34 +54,33 @@ const CrearPreferenciaService = async (datosReserva) => {
       numeroHabitacion,
     } = datosReserva;
 
-    // Validar datos requeridos
     if (!emailCliente || !precioTotal || !nombreCliente || !habitacionId) {
-      console.error("❌ Faltan datos requeridos");
       return {
         error: true,
-        msg: "Faltan datos requeridos para crear la reserva",
+        msg: "Faltan datos requeridos",
         statusCode: 400,
       };
     }
 
-    // Construir item para Mercado Pago
+    const montoNormalizado = Number(Number(precioTotal).toFixed(2));
+
     const items = [
       {
         title: `Reserva Hotel - ${tituloHabitacion || "Habitación"} #${numeroHabitacion || ""}`,
         quantity: 1,
-        unit_price: Number(precioTotal),
+        unit_price: montoNormalizado,
         currency_id: "ARS",
       },
     ];
 
-    // URLs de retorno
     const baseURL = process.env.FRONTEND_URL || "http://localhost:5173";
 
-    // Generar ID temporal para esta preferencia
-    const preferenciaId = `PREF-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const preferenciaTempId = `PREF-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(7)}`;
 
-    // Crear preferencia
     const preference = new Preference(client);
+
     const result = await preference.create({
       body: {
         items,
@@ -92,7 +90,6 @@ const CrearPreferenciaService = async (datosReserva) => {
           pending: `${baseURL}/pago/pending`,
         },
         auto_return: "approved",
-        notification_url: `${process.env.BACKEND_URL}/pagos/webhook`,
         metadata: {
           nombre_cliente: nombreCliente,
           email_cliente: emailCliente,
@@ -102,22 +99,21 @@ const CrearPreferenciaService = async (datosReserva) => {
           num_ninos: numNinos,
           fecha_check_in: fechaCheckIn,
           fecha_check_out: fechaCheckOut,
-          precio_total: precioTotal,
-          preferencia_temp_id: preferenciaId,
+          precio_total: montoNormalizado,
+          preferencia_temp_id: preferenciaTempId,
         },
-        statement_descriptor: "Hotel Reserva",
-        external_reference: preferenciaId,
+        external_reference: preferenciaTempId,
       },
     });
 
-    // Guardar registro inicial del pago
     const nuevoPago = new PagosModel({
       mercadoPagoId: result.id,
       preferenciaId: result.id,
-      monto: precioTotal,
+      monto: montoNormalizado,
       estado: "pending",
       emailPagador: emailCliente,
     });
+
     await nuevoPago.save();
 
     return {
@@ -133,7 +129,7 @@ const CrearPreferenciaService = async (datosReserva) => {
     console.error("❌ Error al crear preferencia:", error);
     return {
       error: true,
-      msg: "Error al crear preferencia de pago",
+      msg: "Error al crear preferencia",
       detalles: error.message,
       statusCode: 500,
     };
@@ -141,62 +137,37 @@ const CrearPreferenciaService = async (datosReserva) => {
 };
 
 /**
- * Procesar notificación de webhook de Mercado Pago
+ * Procesar webhook
  */
 const ProcesarWebhookService = async (data) => {
   try {
-    // Mercado Pago envía notificaciones de tipo "payment"
     if (data.type !== "payment") {
-      return {
-        error: false,
-        msg: "Notificación ignorada",
-        statusCode: 200,
-      };
+      return { error: false, statusCode: 200 };
     }
 
-    // Obtener información del pago
     const paymentId = data.data.id;
     const payment = new Payment(client);
     const paymentInfo = await payment.get({ id: paymentId });
 
-    // Solo procesar si el pago fue aprobado
     if (paymentInfo.status !== "approved") {
-      return {
-        error: false,
-        msg: "Pago no aprobado",
-        statusCode: 200,
-      };
+      return { error: false, statusCode: 200 };
     }
 
-    // Verificar si ya existe una reserva para este pago
     const pagoExistente = await PagosModel.findOne({
       preferenciaId: paymentInfo.preference_id,
     });
 
     if (pagoExistente && pagoExistente.reservaId) {
-      return {
-        error: false,
-        msg: "Reserva ya procesada",
-        statusCode: 200,
-      };
+      return { error: false, statusCode: 200 };
     }
 
-    // Obtener metadata
     const metadata = paymentInfo.metadata;
-
     if (!metadata || !metadata.habitacion_id) {
-      console.error("❌ Metadata incompleta en el pago");
-      return {
-        error: true,
-        msg: "Metadata incompleta",
-        statusCode: 400,
-      };
+      return { error: true, statusCode: 400 };
     }
 
-    // Generar código único de reserva
     const codigoReserva = await generarCodigoReserva();
 
-    // Crear la reserva
     const nuevaReserva = new ReservasModel({
       codigoReserva,
       nombreCliente: metadata.nombre_cliente,
@@ -208,14 +179,12 @@ const ProcesarWebhookService = async (data) => {
       fechaCheckIn: metadata.fecha_check_in,
       fechaCheckOut: metadata.fecha_check_out,
       precioTotal: metadata.precio_total,
-      estado: "confirmada", // Estado confirmada porque ya pagó
+      estado: "confirmada",
       pagoId: pagoExistente ? pagoExistente._id : null,
     });
 
     await nuevaReserva.save();
-    await nuevaReserva.populate("habitacionId");
 
-    // Actualizar el pago
     if (pagoExistente) {
       pagoExistente.mercadoPagoId = paymentId.toString();
       pagoExistente.reservaId = nuevaReserva._id;
@@ -227,37 +196,28 @@ const ProcesarWebhookService = async (data) => {
       await pagoExistente.save();
     }
 
-    // Enviar email de confirmación
     try {
-      const resultadoEmail = await confirmarReserva(nuevaReserva);
-      if (resultadoEmail.success) {
-        console.log("✅ Email de confirmación enviado correctamente");
-      } else {
-        console.warn("⚠️ No se pudo enviar el email de confirmación:", resultadoEmail.error);
-      }
-    } catch (emailError) {
-      console.error("❌ Error al enviar email de confirmación:", emailError);
+      await confirmarReserva(nuevaReserva);
+    } catch (err) {
+      console.error("Error enviando email:", err);
     }
 
     return {
       error: false,
-      msg: "Pago procesado exitosamente",
       reserva: nuevaReserva,
       statusCode: 200,
     };
   } catch (error) {
-    console.error("❌ Error al procesar webhook:", error);
+    console.error("❌ Error webhook:", error);
     return {
       error: true,
-      msg: "Error al procesar webhook",
-      detalles: error.message,
       statusCode: 500,
     };
   }
 };
 
 /**
- * Consultar estado de un pago
+ * Consultar pago
  */
 const ConsultarPagoService = async (paymentId) => {
   try {
@@ -277,11 +237,8 @@ const ConsultarPagoService = async (paymentId) => {
       statusCode: 200,
     };
   } catch (error) {
-    console.error("❌ Error al consultar pago:", error);
     return {
       error: true,
-      msg: "Error al consultar pago",
-      detalles: error.message,
       statusCode: 500,
     };
   }
