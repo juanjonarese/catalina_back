@@ -29,11 +29,9 @@ app.use(async (req, res, next) => {
 });
 
 // Rutas
-console.log("Cargando rutas...");
 try {
   const reservasRoutes = require("./routes/reservas.routes");
   app.use("/reservas", reservasRoutes);
-  console.log("✓ Rutas de reservas cargadas");
 } catch (error) {
   console.error("✗ Error al cargar rutas de reservas:", error.message);
 }
@@ -41,7 +39,6 @@ try {
 try {
   const habitacionesRoutes = require("./routes/habitaciones.routes");
   app.use("/habitaciones", habitacionesRoutes);
-  console.log("✓ Rutas de habitaciones cargadas");
 } catch (error) {
   console.error("✗ Error al cargar rutas de habitaciones:", error.message);
 }
@@ -49,7 +46,6 @@ try {
 try {
   const pasajerosRoutes = require("./routes/pasajeros.routes");
   app.use("/pasajeros", pasajerosRoutes);
-  console.log("✓ Rutas de pasajeros cargadas");
 } catch (error) {
   console.error("✗ Error al cargar rutas de pasajeros:", error.message);
 }
@@ -57,7 +53,6 @@ try {
 try {
   const pagosRoutes = require("./routes/pagos.routes");
   app.use("/pagos", pagosRoutes);
-  console.log("✓ Rutas de pagos cargadas");
 } catch (error) {
   console.error("✗ Error al cargar rutas de pagos:", error.message);
 }
@@ -67,35 +62,11 @@ app.get("/", (req, res) => {
   res.json({ msg: "API Hotel funcionando correctamente" });
 });
 
-// Ruta de diagnóstico temporal
-app.get("/diagnostico", (req, res) => {
-  const mongoose = require("mongoose");
-  const estado = mongoose.connection.readyState;
-  const estados = { 0: "desconectado", 1: "conectado", 2: "conectando", 3: "desconectando" };
-  res.json({
-    db: estados[estado] || "desconocido",
-    dbReadyState: estado,
-    mongo_connect_set: !!process.env.MONGO_CONNECT,
-    node_env: process.env.NODE_ENV || "no definido",
-  });
-});
-
 // Solo iniciar el servidor si no estamos en Vercel
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 8080;
   app.listen(PORT, () => {
     console.log(`Servidor funcionando en puerto ${PORT}`);
-    console.log("Rutas disponibles:");
-    console.log("  GET  /");
-    console.log("  GET  /habitaciones");
-    console.log("  POST /habitaciones");
-    console.log("  GET  /reservas");
-    console.log("  POST /reservas");
-    console.log("  GET  /pasajeros");
-    console.log("  POST /pasajeros");
-    console.log("  POST /pagos/crear-preferencia");
-    console.log("  POST /pagos/webhook");
-    console.log("  GET  /pagos/reserva/:reservaId");
   });
 }
 
