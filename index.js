@@ -77,6 +77,34 @@ try {
   console.error("✗ Error al cargar rutas de auth:", error.message);
 }
 
+try {
+  const clientesRoutes = require("./routes/clientes.routes");
+  app.use("/clientes", clientesRoutes);
+} catch (error) {
+  console.error("✗ Error al cargar rutas de clientes:", error.message);
+}
+
+try {
+  const temporadasRoutes = require("./routes/temporadas.routes");
+  app.use("/temporadas", temporadasRoutes);
+} catch (error) {
+  console.error("✗ Error al cargar rutas de temporadas:", error.message);
+}
+
+try {
+  const cuponesRoutes = require("./routes/cupones.routes");
+  app.use("/cupones", cuponesRoutes);
+} catch (error) {
+  console.error("✗ Error al cargar rutas de cupones:", error.message);
+}
+
+try {
+  const reportesRoutes = require("./routes/reportes.routes");
+  app.use("/reportes", reportesRoutes);
+} catch (error) {
+  console.error("✗ Error al cargar rutas de reportes:", error.message);
+}
+
 // Ruta de health check
 app.get("/", (req, res) => {
   res.json({ msg: "API Hotel funcionando correctamente" });
