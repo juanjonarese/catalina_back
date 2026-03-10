@@ -7,8 +7,21 @@ const cors = require("cors");
 const morgan = require("morgan");
 
 // Configuración de CORS
+const origenesPermitidos = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin: (origin, callback) => {
+    // Permitir requests sin origin (Postman, curl, server-to-server)
+    if (!origin || origenesPermitidos.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS bloqueado para origin: ${origin}`));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -55,6 +68,13 @@ try {
   app.use("/pagos", pagosRoutes);
 } catch (error) {
   console.error("✗ Error al cargar rutas de pagos:", error.message);
+}
+
+try {
+  const authRoutes = require("./routes/auth.routes");
+  app.use("/auth", authRoutes);
+} catch (error) {
+  console.error("✗ Error al cargar rutas de auth:", error.message);
 }
 
 // Ruta de health check
