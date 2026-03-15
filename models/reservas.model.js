@@ -67,6 +67,16 @@ const ReservaSchema = new Schema({
     min: 0,
   },
 
+  // Cupón de descuento (opcional)
+  cuponAplicado: {
+    type: String,
+    default: null,
+  },
+  descuentoAplicado: {
+    type: Number,
+    default: 0,
+  },
+
   // Referencia al pago (opcional, solo si se pagó)
   pagoId: {
     type: Schema.Types.ObjectId,

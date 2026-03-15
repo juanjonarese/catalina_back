@@ -1,6 +1,7 @@
 const { MercadoPagoConfig, Preference, Payment } = require("mercadopago");
 const PagosModel = require("../models/pagos.model");
 const ReservasModel = require("../models/reservas.model");
+const CuponModel = require("../models/cupones.model");
 const { confirmarReserva } = require("../helpers/mensajes.nodemailer.helper");
 
 // Configurar Mercado Pago
@@ -15,19 +16,14 @@ const client = new MercadoPagoConfig({
  * Generar código único de reserva
  */
 const generarCodigoReserva = async () => {
-  const año = new Date().getFullYear();
-  const mes = String(new Date().getMonth() + 1).padStart(2, "0");
-
   const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let codigoAleatorio = "";
+  let parte = "";
 
-  for (let i = 0; i < 6; i++) {
-    codigoAleatorio += caracteres.charAt(
-      Math.floor(Math.random() * caracteres.length),
-    );
+  for (let i = 0; i < 5; i++) {
+    parte += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
   }
 
-  const codigo = `RES-${año}${mes}-${codigoAleatorio}`;
+  const codigo = `HC-${parte}`;
 
   const existente = await ReservasModel.findOne({ codigoReserva: codigo });
   if (existente) return generarCodigoReserva();
@@ -52,6 +48,8 @@ const CrearPreferenciaService = async (datosReserva) => {
       precioTotal,
       tituloHabitacion,
       numeroHabitacion,
+      codigoCupon,
+      descuentoAplicado,
     } = datosReserva;
 
     if (!emailCliente || !precioTotal || !nombreCliente || !habitacionId) {
@@ -101,6 +99,8 @@ const CrearPreferenciaService = async (datosReserva) => {
           fecha_check_out: fechaCheckOut,
           precio_total: montoNormalizado,
           preferencia_temp_id: preferenciaTempId,
+          cupon_aplicado: codigoCupon || null,
+          descuento_aplicado: descuentoAplicado || 0,
         },
         external_reference: preferenciaTempId,
       },
@@ -181,9 +181,23 @@ const ProcesarWebhookService = async (data) => {
       precioTotal: metadata.precio_total,
       estado: "confirmada",
       pagoId: pagoExistente ? pagoExistente._id : null,
+      cuponAplicado: metadata.cupon_aplicado || null,
+      descuentoAplicado: metadata.descuento_aplicado || 0,
     });
 
     await nuevaReserva.save();
+
+    // Actualizar usedCount y savedAmount del cupón si aplica
+    if (metadata.cupon_aplicado && metadata.descuento_aplicado > 0) {
+      try {
+        await CuponModel.findOneAndUpdate(
+          { code: metadata.cupon_aplicado.toUpperCase() },
+          { $inc: { usedCount: 1, savedAmount: metadata.descuento_aplicado } }
+        );
+      } catch (err) {
+        console.warn("No se pudo actualizar el cupón en webhook:", err.message);
+      }
+    }
 
     if (pagoExistente) {
       pagoExistente.mercadoPagoId = paymentId.toString();

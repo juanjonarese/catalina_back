@@ -35,18 +35,21 @@ const VerificarDisponibilidad = async (req, res) => {
       return res.status(400).json({ msg: "Fechas requeridas" });
     }
 
-    const fechaEntrada = new Date(fechaCheckIn);
-    const fechaSalida = new Date(fechaCheckOut);
+    // Normalizar a medianoche UTC para evitar problemas de timezone
+    const normalize = (str) => new Date(str.split("T")[0] + "T00:00:00.000Z");
+    const fechaEntrada = normalize(fechaCheckIn);
+    const fechaSalida  = normalize(fechaCheckOut);
+
+    // Checkout el mismo día que el nuevo check-in NO es conflicto (checkout 11h, checkin 14h)
+    // Solo hay conflicto si el checkout existente es estrictamente POSTERIOR al día de entrada
+    const fechaEntradaSiguiente = new Date(fechaEntrada);
+    fechaEntradaSiguiente.setUTCDate(fechaEntradaSiguiente.getUTCDate() + 1);
 
     // Buscar reservas que se solapen con las fechas solicitadas
     const reservasOcupadas = await ReservasModel.find({
       estado: { $in: ["pendiente", "confirmada"] },
-      $or: [
-        {
-          fechaCheckIn: { $lt: fechaSalida },
-          fechaCheckOut: { $gt: fechaEntrada },
-        },
-      ],
+      fechaCheckIn:  { $lt: fechaSalida },
+      fechaCheckOut: { $gte: fechaEntradaSiguiente },
     });
 
     // Obtener IDs de habitaciones ocupadas

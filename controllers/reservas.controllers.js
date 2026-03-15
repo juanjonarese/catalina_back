@@ -1,26 +1,19 @@
 const ReservasModel = require("../models/reservas.model");
+const CuponModel = require("../models/cupones.model");
 const { confirmarReserva } = require("../helpers/mensajes.nodemailer.helper");
 
 // Función para generar código único de reserva
 const generarCodigoReserva = async () => {
-  const año = new Date().getFullYear();
-  const mes = String(new Date().getMonth() + 1).padStart(2, '0');
-
-  // Generar código aleatorio de 6 caracteres alfanuméricos
   const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let codigoAleatorio = '';
-  for (let i = 0; i < 6; i++) {
-    codigoAleatorio += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+  let parte = '';
+  for (let i = 0; i < 5; i++) {
+    parte += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
   }
 
-  const codigo = `RES-${año}${mes}-${codigoAleatorio}`;
+  const codigo = `HC-${parte}`;
 
-  // Verificar que el código no exista
   const existente = await ReservasModel.findOne({ codigoReserva: codigo });
-  if (existente) {
-    // Si existe, generar otro recursivamente
-    return generarCodigoReserva();
-  }
+  if (existente) return generarCodigoReserva();
 
   return codigo;
 };
@@ -35,6 +28,18 @@ const CrearReserva = async (req, res) => {
       codigoReserva
     });
     await reserva.save();
+
+    // Si se usó un cupón, actualizar usedCount y savedAmount
+    if (req.body.codigoCupon && req.body.descuentoAplicado > 0) {
+      try {
+        await CuponModel.findOneAndUpdate(
+          { code: req.body.codigoCupon.toUpperCase() },
+          { $inc: { usedCount: 1, savedAmount: req.body.descuentoAplicado } }
+        );
+      } catch (err) {
+        console.warn("No se pudo actualizar el cupón:", err.message);
+      }
+    }
 
     // Hacer populate de habitacionId para tener toda la información
     await reserva.populate('habitacionId');
