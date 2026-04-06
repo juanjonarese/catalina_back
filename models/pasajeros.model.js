@@ -50,6 +50,20 @@ const PasajeroSchema = new Schema({
     required: true,
   },
 
+  // Referencia opcional a la reserva
+  reservaId: {
+    type: Schema.Types.ObjectId,
+    ref: "reservas",
+    required: false,
+    default: null,
+  },
+
+  // Si el pasajero sigue activo en el hotel (false = ya se retiró)
+  activo: {
+    type: Boolean,
+    default: true,
+  },
+
   // Fechas de registro y actualización
   fechaCreacion: {
     type: Date,
