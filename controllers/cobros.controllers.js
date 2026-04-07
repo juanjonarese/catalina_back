@@ -4,18 +4,24 @@ const ReservasModel = require("../models/reservas.model");
 const PagosModel = require("../models/pagos.model");
 const ConsumoModel = require("../models/consumos.model");
 
-// Devuelve el estado de cuenta completo de un pasajero para el checkout
-const ObtenerCuentaPasajero = async (req, res) => {
+// Devuelve el estado de cuenta completo de una habitación para el checkout
+const ObtenerCuentaHabitacion = async (req, res) => {
   try {
-    const pasajero = await PasajerosModel.findById(req.params.pasajeroId);
-    if (!pasajero) return res.status(404).json({ msg: "Pasajero no encontrado" });
+    const { habitacion } = req.params;
+
+    // Todos los pasajeros activos de esa habitación
+    const pasajeros = await PasajerosModel.find({ habitacion, activo: { $ne: false } });
+    if (!pasajeros.length) return res.status(404).json({ msg: "No hay pasajeros activos en esa habitación" });
+
+    // Tomar el primer pasajero como referencia para las fechas y reserva
+    const pasajeroRef = pasajeros[0];
 
     let reserva = null;
     let pago = null;
     let pagadoPrevio = 0;
 
-    if (pasajero.reservaId) {
-      reserva = await ReservasModel.findById(pasajero.reservaId).populate("habitacionId");
+    if (pasajeroRef.reservaId) {
+      reserva = await ReservasModel.findById(pasajeroRef.reservaId).populate("habitacionId");
       if (reserva && reserva.pagoId) {
         pago = await PagosModel.findById(reserva.pagoId);
         if (pago && pago.estado === "approved") {
@@ -25,11 +31,10 @@ const ObtenerCuentaPasajero = async (req, res) => {
     }
 
     // Calcular noches
-    const checkin = new Date(pasajero.checkin);
-    const checkout = new Date(pasajero.checkout);
+    const checkin = new Date(pasajeroRef.checkin);
+    const checkout = new Date(pasajeroRef.checkout);
     const noches = Math.max(1, Math.round((checkout - checkin) / (1000 * 60 * 60 * 24)));
 
-    // Precio por noche: si tiene reserva, dividir el precio total entre las noches
     let precioPorNoche = 0;
     let totalNoches = 0;
     if (reserva) {
@@ -37,15 +42,17 @@ const ObtenerCuentaPasajero = async (req, res) => {
       totalNoches = reserva.precioTotal;
     }
 
-    // Consumos del pasajero
-    const consumos = await ConsumoModel.find({ pasajeroId: pasajero._id }).sort({ fechaCreacion: 1 });
+    // Consumos de la habitación
+    const consumos = await ConsumoModel.find({ habitacion }).sort({ fechaCreacion: 1 });
     const totalConsumos = consumos.reduce((sum, c) => sum + c.monto, 0);
 
     const totalGeneral = totalNoches + totalConsumos;
     const saldoPendiente = Math.max(0, totalGeneral - pagadoPrevio);
 
     res.status(200).json({
-      pasajero,
+      habitacion,
+      pasajeros,
+      pasajeroRef,
       reserva,
       pago,
       noches,
@@ -58,8 +65,8 @@ const ObtenerCuentaPasajero = async (req, res) => {
       saldoPendiente,
     });
   } catch (error) {
-    console.error("Error en ObtenerCuentaPasajero:", error);
-    res.status(500).json({ msg: "Error al obtener cuenta del pasajero", error: error.message });
+    console.error("Error en ObtenerCuentaHabitacion:", error);
+    res.status(500).json({ msg: "Error al obtener cuenta de la habitación", error: error.message });
   }
 };
 
@@ -68,11 +75,11 @@ const RegistrarCobro = async (req, res) => {
     const cobro = new CobroModel(req.body);
     await cobro.save();
 
-    // Marcar al pasajero como inactivo (ya se retiró)
-    await PasajerosModel.findByIdAndUpdate(req.body.pasajeroId, {
-      activo: false,
-      fechaActualizacion: Date.now(),
-    });
+    // Marcar TODOS los pasajeros de esa habitación como inactivos
+    await PasajerosModel.updateMany(
+      { habitacion: req.body.habitacion, activo: { $ne: false } },
+      { activo: false }
+    );
 
     res.status(201).json({ msg: "Cobro registrado", cobro });
   } catch (error) {
@@ -91,4 +98,4 @@ const ObtenerCobrosPorTurno = async (req, res) => {
   }
 };
 
-module.exports = { ObtenerCuentaPasajero, RegistrarCobro, ObtenerCobrosPorTurno };
+module.exports = { ObtenerCuentaHabitacion, RegistrarCobro, ObtenerCobrosPorTurno };

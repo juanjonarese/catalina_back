@@ -11,12 +11,12 @@ const CrearConsumo = async (req, res) => {
   }
 };
 
-const ObtenerConsumosPorPasajero = async (req, res) => {
+const ObtenerConsumosPorHabitacion = async (req, res) => {
   try {
-    const consumos = await ConsumoModel.find({ pasajeroId: req.params.pasajeroId }).sort({ fechaCreacion: -1 });
+    const consumos = await ConsumoModel.find({ habitacion: req.params.habitacion }).sort({ fechaCreacion: 1 });
     res.status(200).json(consumos);
   } catch (error) {
-    console.error("Error en ObtenerConsumosPorPasajero:", error);
+    console.error("Error en ObtenerConsumosPorHabitacion:", error);
     res.status(500).json({ msg: "Error al obtener consumos" });
   }
 };
@@ -32,4 +32,4 @@ const EliminarConsumo = async (req, res) => {
   }
 };
 
-module.exports = { CrearConsumo, ObtenerConsumosPorPasajero, EliminarConsumo };
+module.exports = { CrearConsumo, ObtenerConsumosPorHabitacion, EliminarConsumo };

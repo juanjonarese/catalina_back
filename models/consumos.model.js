@@ -1,10 +1,16 @@
 const { Schema, model } = require("mongoose");
 
 const ConsumoSchema = new Schema({
+  habitacion: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   pasajeroId: {
     type: Schema.Types.ObjectId,
     ref: "pasajeros",
-    required: true,
+    required: false,
+    default: null,
   },
   reservaId: {
     type: Schema.Types.ObjectId,
