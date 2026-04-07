@@ -47,7 +47,8 @@ const PasajeroSchema = new Schema({
   // Firma digital (almacenada como base64 string)
   firma: {
     type: String,
-    required: true,
+    required: false,
+    default: null,
   },
 
   // Referencia opcional a la reserva
