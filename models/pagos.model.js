@@ -1,4 +1,5 @@
-const { Schema, model } = require("mongoose");
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const PagoSchema = new Schema({
   // ID de pago de MercadoPago
@@ -92,5 +93,5 @@ PagoSchema.pre("save", function (next) {
   next();
 });
 
-const PagosModel = model("pagos", PagoSchema);
+const PagosModel = mongoose.models.pagos || mongoose.model("pagos", PagoSchema);
 module.exports = PagosModel;

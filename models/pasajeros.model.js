@@ -1,4 +1,5 @@
-const { Schema, model } = require("mongoose");
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const PasajeroSchema = new Schema({
   // Información personal
@@ -82,5 +83,5 @@ PasajeroSchema.pre("save", function (next) {
   next();
 });
 
-const PasajerosModel = model("pasajeros", PasajeroSchema);
+const PasajerosModel = mongoose.models.pasajeros || mongoose.model("pasajeros", PasajeroSchema);
 module.exports = PasajerosModel;

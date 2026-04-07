@@ -1,4 +1,5 @@
-const { Schema, model } = require("mongoose");
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const ReservaSchema = new Schema({
   // Código único de reserva
@@ -101,5 +102,5 @@ ReservaSchema.pre("save", function (next) {
   next();
 });
 
-const ReservasModel = model("reservas", ReservaSchema);
+const ReservasModel = mongoose.models.reservas || mongoose.model("reservas", ReservaSchema);
 module.exports = ReservasModel;

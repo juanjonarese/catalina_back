@@ -1,4 +1,5 @@
-const { Schema, model } = require("mongoose");
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const HabitacionSchema = new Schema({
   numero: {
@@ -55,5 +56,5 @@ HabitacionSchema.pre("save", function (next) {
   next();
 });
 
-const HabitacionesModel = model("habitaciones", HabitacionSchema);
+const HabitacionesModel = mongoose.models.habitaciones || mongoose.model("habitaciones", HabitacionSchema);
 module.exports = HabitacionesModel;

@@ -1,4 +1,5 @@
-const { Schema, model } = require("mongoose");
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const TurnoSchema = new Schema({
   empleado: {
@@ -42,5 +43,5 @@ const TurnoSchema = new Schema({
   },
 });
 
-const TurnoModel = model("turnos", TurnoSchema);
+const TurnoModel = mongoose.models.turnos || mongoose.model("turnos", TurnoSchema);
 module.exports = TurnoModel;

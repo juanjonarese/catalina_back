@@ -1,4 +1,5 @@
-const { Schema, model } = require("mongoose");
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const CobroSchema = new Schema({
   pasajeroId: {
@@ -54,5 +55,5 @@ const CobroSchema = new Schema({
   },
 });
 
-const CobroModel = model("cobros", CobroSchema);
+const CobroModel = mongoose.models.cobros || mongoose.model("cobros", CobroSchema);
 module.exports = CobroModel;

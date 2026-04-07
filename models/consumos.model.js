@@ -1,4 +1,5 @@
-const { Schema, model } = require("mongoose");
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const ConsumoSchema = new Schema({
   habitacion: {
@@ -40,5 +41,5 @@ const ConsumoSchema = new Schema({
   },
 });
 
-const ConsumoModel = model("consumos", ConsumoSchema);
+const ConsumoModel = mongoose.models.consumos || mongoose.model("consumos", ConsumoSchema);
 module.exports = ConsumoModel;
